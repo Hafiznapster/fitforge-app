@@ -1,36 +1,61 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { useWorkouts } from '../../hooks/useWorkouts';
+import { useTrainingStore } from '../../stores/trainingStore';
 import { WorkoutSession } from '../../components/training/WorkoutSession';
 import { AIplanGenerator } from '../../components/training/AIplanGenerator';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { theme } from '../../constants/theme';
 import { FlashList } from '@shopify/flash-list';
-import { Exercise } from '../../types/workout';
+import { Exercise } from '../../types';
+import { useState } from 'react';
 
 export default function TrainingScreen() {
-  const { 
-    history, 
-    activeSession, 
-    startSession, 
-    endSession, 
-    toggleExerciseCompletion 
-  } = useWorkouts();
+  const {
+    history,
+    fetchHistory,
+    addWorkout,
+    isLoading
+  } = useTrainingStore();
+
+  const [activeSession, setActiveSession] = useState<{ name: string, exercises: Exercise[] } | null>(null);
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const handleStartEmpty = () => {
-    startSession('Custom Session', []);
+    setActiveSession({ name: 'Custom Session', exercises: [] });
   };
 
   const handlePlanGenerated = (name: string, exercises: Exercise[]) => {
-    startSession(name, exercises);
+    setActiveSession({ name, exercises });
+  };
+
+  const handleEndSession = async (durationMin: number) => {
+    if (!activeSession) return;
+
+    try {
+      await addWorkout({
+        name: activeSession.name,
+        type: 'strength',
+        duration_min: durationMin,
+        calories_burned: durationMin * 7, // Rough estimate
+        notes: 'Logged via app',
+        exercises: activeSession.exercises
+      });
+      setActiveSession(null);
+      fetchHistory();
+    } catch (error) {
+      console.error('Error saving workout:', error);
+    }
   };
 
   const renderHistoryItem = ({ item }: { item: any }) => (
     <Card variant="glass" style={styles.historyCard}>
       <Text style={styles.historyTitle}>{item.name}</Text>
       <View style={styles.historyStats}>
-        <Text style={styles.historyStat}>{item.date.toLocaleDateString()}</Text>
+        <Text style={styles.historyStat}>{new Date(item.logged_at).toLocaleDateString()}</Text>
         <Text style={styles.historyStat}>{item.duration_min} min</Text>
       </View>
     </Card>
@@ -39,10 +64,20 @@ export default function TrainingScreen() {
   if (activeSession) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <WorkoutSession 
-          session={activeSession}
-          onEndSession={endSession}
-          onToggleExercise={toggleExerciseCompletion}
+        <WorkoutSession
+          session={{
+            ...activeSession,
+            id: 'temp',
+            type: 'strength',
+            duration_min: 0,
+            calories_burned: 0,
+            notes: '',
+            logged_at: new Date().toISOString()
+          }}
+          onEndSession={handleEndSession}
+          onToggleExercise={(id) => {
+            // Implementation for marking exercises as done can be added here
+          }}
         />
       </SafeAreaView>
     );
@@ -56,9 +91,9 @@ export default function TrainingScreen() {
           <AIplanGenerator onPlanGenerated={handlePlanGenerated} />
         </View>
 
-        <Button 
-          label="Start Custom Workout" 
-          onPress={handleStartEmpty} 
+        <Button
+          label="Start Custom Workout"
+          onPress={handleStartEmpty}
           style={styles.startBtn}
         />
 

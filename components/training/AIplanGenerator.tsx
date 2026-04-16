@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform } from 'react
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { theme } from '../../constants/theme';
-import { Exercise } from '../../types/workout';
+import { Exercise } from '../../types';
+import { aiService } from '../../services/aiService';
+import { parseAIWorkoutPlan } from '../../services/aiParser';
 
 interface AIplanGeneratorProps {
   onPlanGenerated: (name: string, plan: Exercise[]) => void;
@@ -18,35 +20,35 @@ export function AIplanGenerator({ onPlanGenerated }: AIplanGeneratorProps) {
   const MUSCLES = ['Chest', 'Back', 'Legs', 'Arms', 'Core', 'Full Body'];
   const EXP = ['beginner', 'intermediate', 'expert'];
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setLoading(true);
-    // Simulate AI Generation
-    setTimeout(() => {
-      const generatedPlan: Exercise[] = [
-        { id: 'g1', name: `AI ${muscleGroup} Press`, sets: 4, reps: 10, weight_kg: 50, difficulty: experience as any },
-        { id: 'g2', name: 'AI Cable Flyes', sets: 3, reps: 15, weight_kg: 15, difficulty: experience as any },
-        { id: 'g3', name: 'AI Pushups', sets: 3, reps: 20, weight_kg: 0, difficulty: 'beginner' },
-      ];
-      setLoading(false);
+    try {
+      const response = await aiService.getWorkoutPlan(muscleGroup, experience);
+      const exercises = parseAIWorkoutPlan(response.content);
+
       setVisible(false);
-      onPlanGenerated(`${muscleGroup} AI Plan`, generatedPlan);
-    }, 2000);
+      onPlanGenerated(`${muscleGroup} AI Plan`, exercises);
+    } catch (error) {
+      console.error('AI Plan Generation Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <Button label="Generate with AI ✨" onPress={() => setVisible(true)} variant="secondary" />
-      
+
       <Modal visible={visible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <Card variant="solid" style={styles.modalContent}>
             <Text style={styles.title}>AI Plan Generator</Text>
-            
+
             <Text style={styles.label}>Target Muscle Group</Text>
             <View style={styles.chipRow}>
               {MUSCLES.map(m => (
-                <TouchableOpacity 
-                  key={m} 
+                <TouchableOpacity
+                  key={m}
                   style={[styles.chip, muscleGroup === m && styles.chipActive]}
                   onPress={() => setMuscleGroup(m)}
                 >
@@ -58,8 +60,8 @@ export function AIplanGenerator({ onPlanGenerated }: AIplanGeneratorProps) {
             <Text style={styles.label}>Experience Level</Text>
             <View style={styles.chipRow}>
               {EXP.map(e => (
-                <TouchableOpacity 
-                  key={e} 
+                <TouchableOpacity
+                  key={e}
                   style={[styles.chip, experience === e && styles.chipActive]}
                   onPress={() => setExperience(e)}
                 >

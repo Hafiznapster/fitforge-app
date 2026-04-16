@@ -1,20 +1,18 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-// Proper MMKV adapter for Zustand
-import { MMKV } from 'react-native-mmkv';
-const mmkvStorage = new MMKV();
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const zustandStorage = {
-  getItem: (name: string) => {
-    const value = mmkvStorage.getString(name);
+  getItem: async (name: string) => {
+    const value = await AsyncStorage.getItem(name);
     return value ?? null;
   },
-  setItem: (name: string, value: string) => {
-    mmkvStorage.set(name, value);
+  setItem: async (name: string, value: string) => {
+    await AsyncStorage.setItem(name, value);
   },
-  removeItem: (name: string) => {
-    mmkvStorage.delete(name);
+  removeItem: async (name: string) => {
+    await AsyncStorage.removeItem(name);
   },
 };
 

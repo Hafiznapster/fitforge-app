@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Text } from 'react-native';
-import { useAuthStore } from '../../stores/useAuthStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useDailyStore } from '../../stores/dailyStore';
+import { useUserStore } from '../../stores/userStore';
 import { useStreak } from '../../hooks/useStreak';
 import { CalorieRing } from '../../components/home/CalorieRing';
 import { MacroSummary } from '../../components/home/MacroSummary';
@@ -15,19 +17,19 @@ import { useRouter } from 'expo-router';
 export default function HomeScreen() {
   const { signOut } = useAuthStore();
   const { streak } = useStreak();
+  const { meals, removeMeal, fetchDailyData } = useDailyStore();
+  const { profile } = useUserStore();
   const router = useRouter();
-  
-  // Placeholder data - in a real app this comes from Zustand store fed by Supabase
-  const [meals, setMeals] = useState([
-    { id: '1', name: 'Oatmeal & Protein', calories: 450, meal_type: 'breakfast' },
-    { id: '2', name: 'Chicken Salad', calories: 650, meal_type: 'lunch' },
-  ]);
 
-  const currentCalories = meals.reduce((sum: number, meal: any) => sum + meal.calories, 0);
-  const goalCalories = 2200;
+  useEffect(() => {
+    fetchDailyData();
+  }, []);
+
+  const currentCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
+  const goalCalories = profile?.calorie_goal || 2000;
 
   const handleDelete = (id: string) => {
-    setMeals(meals.filter((m: any) => m.id !== id));
+    removeMeal(id);
   };
 
   return (
@@ -36,35 +38,35 @@ export default function HomeScreen() {
         <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title}>Welcome back</Text>
-            <Button 
-                label="⚙️ Settings" 
-                variant="ghost" 
-                onPress={() => router.push('/profile')} 
+            <Button
+                label="⚙️ Settings"
+                variant="ghost"
+                onPress={() => router.push('/profile')}
             />
           </View>
           <StreakBadge streak={streak} />
 
-          <CalorieRing 
-            currentCalories={currentCalories} 
-            goalCalories={goalCalories} 
+          <CalorieRing
+            currentCalories={currentCalories}
+            goalCalories={goalCalories}
           />
-          
-          <MacroSummary 
-            proteinCurrent={85} proteinGoal={150}
-            carbsCurrent={120} carbsGoal={200}
-            fatCurrent={40} fatGoal={65}
+
+          <MacroSummary
+            proteinCurrent={meals.reduce((sum, m) => sum + m.protein_g, 0)} proteinGoal={profile?.protein_goal || 150}
+            carbsCurrent={meals.reduce((sum, m) => sum + m.carbs_g, 0)} carbsGoal={profile?.carb_goal || 200}
+            fatCurrent={meals.reduce((sum, m) => sum + m.fat_g, 0)} fatGoal={profile?.fat_goal || 65}
           />
 
           <WaterTracker />
-          
+
           <WeekCalendar />
 
           <MealList meals={meals} onDelete={handleDelete} />
 
-          <Button 
-            label="Sign Out" 
-            variant="ghost" 
-            onPress={signOut} 
+          <Button
+            label="Sign Out"
+            variant="ghost"
+            onPress={signOut}
             style={styles.signOutButton}
           />
         </View>

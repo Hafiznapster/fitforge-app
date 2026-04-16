@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import { Slot, useRouter, useSegments, ErrorBoundaryProps } from 'expo-router';
 import { supabase } from '../services/supabase';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore } from '../stores/authStore';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { theme } from '../constants/theme';
 import Toast from 'react-native-toast-message';
 import { Button } from '../components/ui/Button';
 
-// Named export for automatic Error Boundary casting in Expo Router
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <View style={styles.errorContainer}>
@@ -19,17 +18,16 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  const { session, initialized, setSession } = useAuthStore();
+  const { session, isInitializing, setSession, setInitializing } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // Initial session fetch
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setInitializing(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
@@ -38,18 +36,18 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!initialized) return;
+    if (isInitializing) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)');
     }
-  }, [session, initialized, segments]);
+  }, [session, isInitializing, segments]);
 
-  if (!initialized) {
+  if (isInitializing) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={theme.colors.primary} />

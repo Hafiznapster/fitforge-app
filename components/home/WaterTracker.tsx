@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react-native';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { theme } from '../../constants/theme';
+import { useDailyStore } from '../../stores/dailyStore';
 
 export function WaterTracker() {
   const TOTAL_GLASSES = 8;
-  const [consumed, setConsumed] = useState(3);
+  const { waterTotal, addWater } = useDailyStore();
 
   const drops = Array.from({ length: TOTAL_GLASSES });
 
   const handleTap = (index: number) => {
-    // If tapping the same glass, you can toggle it off, or just fill up to that point
-    // Usually filling sequentially is better
-    setConsumed(index + 1);
+    const targetGlasses = index + 1;
+    const difference = targetGlasses - waterTotal;
+
+    if (difference > 0) {
+      addWater(difference);
+    } else if (difference < 0) {
+      Toast.show({
+        type: 'info',
+        text1: 'Hydration Log',
+        text2: 'Water intake can only be increased for today',
+      });
+    }
   };
 
   return (
@@ -19,10 +29,10 @@ export function WaterTracker() {
       <Text style={styles.title}>Hydration</Text>
       <View style={styles.dropRow}>
         {drops.map((_, i) => {
-          const isFilled = i < consumed;
+          const isFilled = i < waterTotal;
           return (
-            <TouchableOpacity 
-              key={i} 
+            <TouchableOpacity
+              key={i}
               onPress={() => handleTap(i)}
               style={styles.dropContainer}
             >
@@ -33,7 +43,7 @@ export function WaterTracker() {
           );
         })}
       </View>
-      <Text style={styles.subtitle}>{consumed} of {TOTAL_GLASSES} glasses</Text>
+      <Text style={styles.subtitle}>{waterTotal} of {TOTAL_GLASSES} glasses</Text>
     </View>
   );
 }
@@ -64,7 +74,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 0,
-    transform: [{ rotate: '-45deg' }], // Makes a teardrop shape
+    transform: [{ rotate: '-45deg' }],
     backgroundColor: theme.colors.surfaceGlass,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -72,12 +82,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dropFilled: {
-    backgroundColor: 'rgba(0, 210, 211, 0.2)', // Light secondary cyan
+    backgroundColor: 'rgba(0, 210, 211, 0.2)',
     borderColor: theme.colors.secondary,
   },
   dropText: {
     fontSize: 16,
-    transform: [{ rotate: '45deg' }], // Counter-rotate the emoji
+    transform: [{ rotate: '45deg' }],
   },
   subtitle: {
     ...theme.typography.caption,

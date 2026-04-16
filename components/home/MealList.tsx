@@ -68,6 +68,12 @@ export function MealList({ meals, onDelete }: MealListProps) {
               <Text style={styles.emptyIcon}>🍽️</Text>
               <Text style={styles.emptyTitle}>No meals logged yet</Text>
               <Text style={styles.emptySubtitle}>Start fueling up! Swipe left to delete an item.</Text>
+              <Button
+                label="Log First Meal"
+                variant="secondary"
+                onPress={() => {}} // We will implement the meal logging modal in the next step
+                style={{ marginTop: theme.spacing.md }}
+              />
             </View>
           }
         />

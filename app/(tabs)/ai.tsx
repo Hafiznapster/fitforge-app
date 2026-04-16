@@ -6,14 +6,13 @@ import { ChatBubble } from '../../components/ai/ChatBubble';
 import { ChatInput } from '../../components/ai/ChatInput';
 import { SuggestionChips } from '../../components/ai/SuggestionChips';
 import { theme } from '../../constants/theme';
-import { ChatMessage } from '../../types/ai';
+import { AIChatMessage } from '../../services/aiService';
 
 export default function AIScreen() {
   const { messages, isLoading, sendMessage } = useAI();
-  const listRef = useRef<FlashList<ChatMessage>>(null);
+  const listRef = useRef<FlashList<AIChatMessage>>(null);
 
   useEffect(() => {
-    // Auto-scroll to bottom when new messages arrive
     if (messages.length > 0) {
       setTimeout(() => {
         listRef.current?.scrollToEnd({ animated: true });
@@ -29,8 +28,8 @@ export default function AIScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
@@ -50,11 +49,11 @@ export default function AIScreen() {
             ref={listRef}
             data={messages}
             renderItem={({ item }) => <ChatBubble message={item} />}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(_, index) => index.toString()}
             estimatedItemSize={80}
             contentContainerStyle={styles.listContent}
           />
-          
+
           {isLoading && (
             <View style={styles.typingIndicator}>
               <ActivityIndicator size="small" color={theme.colors.primary} />

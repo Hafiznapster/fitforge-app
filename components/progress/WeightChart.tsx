@@ -4,20 +4,25 @@ import { LineChart } from 'react-native-gifted-charts';
 import { theme } from '../../constants/theme';
 import { Card } from '../ui/Card';
 
-export function WeightChart() {
-  const data = [
-    { value: 76.5, label: '1st' },
-    { value: 76.2 }, { value: 76.1 }, { value: 75.8 }, { value: 75.9 }, 
-    { value: 75.5, label: '15th' },
-    { value: 75.6 }, { value: 75.3 }, { value: 75.1 }, { value: 74.8, label: '30th' }
-  ];
+export function WeightChart({ data = [] }: { data?: any[] }) {
+  const chartData = data.length > 0
+    ? data.map(m => ({ value: m.weight_kg, label: format(new Date(m.logged_at), 'MMM d') }))
+    : [
+        { value: 76.5, label: '1st' },
+        { value: 76.2 }, { value: 76.1 }, { value: 75.8 }, { value: 75.9 },
+        { value: 75.5, label: '15th' },
+        { value: 75.6 }, { value: 75.3 }, { value: 75.1 }, { value: 74.8, label: '30th' }
+      ];
+
+  const maxValue = Math.max(...chartData.map(d => d.value), 80);
+  const minValue = Math.min(...chartData.map(d => d.value), 70);
 
   return (
     <Card variant="glass" style={styles.card}>
       <Text style={styles.title}>Weight Progress (30 Days)</Text>
       <View style={styles.chartContainer}>
         <LineChart
-          data={data}
+          data={chartData}
           color={theme.colors.primary}
           thickness={3}
           hideDataPoints
@@ -29,9 +34,8 @@ export function WeightChart() {
           rulesColor={theme.colors.border}
           initialSpacing={10}
           height={180}
-          maxValue={80}
+          maxValue={maxValue}
           noOfSections={4}
-          yAxisLabelTexts={['70', '73', '76', '79', '82']}
         />
       </View>
     </Card>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../services/supabase';
+import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { theme } from '../../constants/theme';
@@ -11,22 +12,32 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const setSession = useAuthStore((state) => state.setSession);
 
   async function signInWithEmail() {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) Alert.alert('Login Failed', error.message);
-    // On success, the auth listener in _layout.tsx will redirect to tabs
-    setLoading(false);
+      if (error) throw error;
+
+      if (data.session) {
+        setSession(data.session);
+        router.replace('/(tabs)');
+      }
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -53,18 +64,18 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             secureTextEntry
           />
-          
-          <Button 
-            label="Sign In" 
-            onPress={signInWithEmail} 
-            isLoading={loading} 
+
+          <Button
+            label="Sign In"
+            onPress={signInWithEmail}
+            isLoading={loading}
             style={styles.button}
           />
-          
-          <Button 
-            label="Create an account" 
-            variant="ghost" 
-            onPress={() => router.push('/(auth)/register')} 
+
+          <Button
+            label="Create an account"
+            variant="ghost"
+            onPress={() => router.push('/(auth)/register')}
           />
         </Card>
       </KeyboardAvoidingView>

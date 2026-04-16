@@ -1,67 +1,42 @@
-import { useState } from 'react';
-import { ChatMessage, ChatRequest, AIResponse } from '../types/ai';
-import { api } from '../services/api';
+import { useState, useCallback } from 'react';
+import { aiService, AIChatMessage, AIResponse } from '../services/aiService';
+import Toast from 'react-native-toast-message';
 
 export function useAI() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async (content: string) => {
-    if (!content.trim()) return;
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim()) return;
 
-    // Formatting history for the API contract shape:
-    // Only keeping the last 10 messages for context window bounds.
-    const historyPayload = messages.slice(-10).map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    const userMessage: ChatMessage = {
-      id: Math.random().toString(),
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    };
-
+    const userMessage: AIChatMessage = { role: 'user', content: text };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      const requestPayload: ChatRequest = {
-        message: content,
-        history: historyPayload,
-      };
-
-      const { data } = await api.post<AIResponse>('/ai/chat', requestPayload);
-      
-      const aiMessage: ChatMessage = {
-        id: Math.random().toString(),
+      const response = await aiService.chat(text, messages);
+      const assistantMessage: AIChatMessage = {
         role: 'assistant',
-        content: data.content,
-        provider: data.provider,
-        timestamp: new Date(),
+        content: response.content
       };
-      
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error('AI Error:', error);
-      const errorMessage: ChatMessage = {
-        id: Math.random().toString(),
-        role: 'assistant',
-        content: 'Sorry, I encountered an error connecting to the AI. Please try again.',
-        provider: 'openrouter',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'AI Error',
+        text2: error.response?.data?.detail || 'Failed to get response from AI',
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [messages]);
+
+  const clearChat = () => setMessages([]);
 
   return {
     messages,
-    isLoading,
     sendMessage,
-    setMessages,
+    isLoading,
+    clearChat,
   };
 }

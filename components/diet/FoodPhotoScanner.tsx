@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, Button as NativeButton, Modal, SafeAreaView, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Button } from '../ui/Button';
-import { api } from '../../services/api';
+import { aiService, FoodScanResponse } from '../../services/aiService';
 import { theme } from '../../constants/theme';
 
 interface FoodPhotoScannerProps {
-  onScan: (food: { name: string; calories: number }) => void;
+  onScan: (food: FoodScanResponse) => void;
 }
 
 export function FoodPhotoScanner({ onScan }: FoodPhotoScannerProps) {
@@ -32,12 +32,11 @@ export function FoodPhotoScanner({ onScan }: FoodPhotoScannerProps) {
 
     try {
       const photo = await cameraRef.takePictureAsync({ base64: true, quality: 0.5 });
-      
-      // Call Phase 3 AI Vision endpoint:
+
       if (photo && photo.base64) {
-        const { data } = await api.post('/ai/scan-food', { image: photo.base64 });
+        const foodData = await aiService.scanFood(photo.base64);
         setScanning(false);
-        onScan({ name: data.name, calories: data.calories });
+        onScan(foodData);
       }
     } catch (error) {
       console.error('Photo analysis failed', error);
@@ -49,32 +48,32 @@ export function FoodPhotoScanner({ onScan }: FoodPhotoScannerProps) {
 
   return (
     <>
-      <Button 
-        label="📸 Photo Scan (AI)" 
-        variant="ghost" 
-        onPress={() => setScanning(true)} 
+      <Button
+        label="📸 Photo Scan (AI)"
+        variant="ghost"
+        onPress={() => setScanning(true)}
         style={styles.triggerButton}
       />
       <Modal visible={scanning} animationType="slide">
         <SafeAreaView style={styles.modalContainer}>
           <Text style={styles.header}>Snap your meal</Text>
           <View style={styles.cameraFrame}>
-            <CameraView 
-              style={styles.camera} 
+            <CameraView
+              style={styles.camera}
               ref={(ref) => setCameraRef(ref)}
             />
           </View>
           <View style={styles.footer}>
-            <Button 
-              label={processing ? "Analyzing Elements..." : "Capture"} 
-              onPress={takePictureAndAnalyze} 
+            <Button
+              label={processing ? "Analyzing Elements..." : "Capture"}
+              onPress={takePictureAndAnalyze}
               isLoading={processing}
               style={{ flex: 1, marginRight: 8 }}
             />
-            <Button 
-              label="Cancel" 
-              variant="ghost" 
-              onPress={() => { setScanning(false); setProcessing(false); }} 
+            <Button
+              label="Cancel"
+              variant="ghost"
+              onPress={() => { setScanning(false); setProcessing(false); }}
               style={{ width: 100 }}
               disabled={processing}
             />
@@ -115,7 +114,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: theme.colors.accent, // Different color than barcode to distinguish
+    borderColor: theme.colors.accent,
   },
   camera: {
     flex: 1,

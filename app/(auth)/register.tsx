@@ -14,26 +14,31 @@ export default function RegisterScreen() {
 
   async function signUpWithEmail() {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        // We will create the profile automatically via Postgres triggers or manually later
-        data: { username: email.split('@')[0] }
-      }
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username: email.split('@')[0] }
+        }
+      });
 
-    if (error) {
-      Alert.alert('Registration Failed', error.message);
-    } else {
-      Alert.alert('Success', 'Account created! Check your email or sign in directly.');
+      if (error) throw error;
+
+      if (data.user) {
+        Alert.alert('Success', 'Account created! Please check your email for verification if required, or sign in directly.');
+        router.replace('/(auth)/login');
+      }
+    } catch (error: any) {
+      Alert.alert('Registration Failed', error.message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -60,18 +65,18 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
             secureTextEntry
           />
-          
-          <Button 
-            label="Sign Up" 
-            onPress={signUpWithEmail} 
-            isLoading={loading} 
+
+          <Button
+            label="Sign Up"
+            onPress={signUpWithEmail}
+            isLoading={loading}
             style={styles.button}
           />
-          
-          <Button 
-            label="Back to Login" 
-            variant="ghost" 
-            onPress={() => router.back()} 
+
+          <Button
+            label="Back to Login"
+            variant="ghost"
+            onPress={() => router.back()}
           />
         </Card>
       </KeyboardAvoidingView>
