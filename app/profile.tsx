@@ -9,10 +9,9 @@ import { Card } from '../components/ui/Card';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
-import { supabase } from '../services/supabase';
 
 export default function ProfileScreen() {
-  const { session } = useAuthStore();
+  const { session, signOut } = useAuthStore();
   const { isDarkMode, toggleTheme } = useSettingsStore();
   const { profile, fetchProfile, updateProfile, isLoading } = useUserStore();
   const router = useRouter();
@@ -63,7 +62,7 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     // The auth listener in _layout.tsx will handle the redirect
   };
 
