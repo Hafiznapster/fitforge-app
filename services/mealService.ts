@@ -3,7 +3,7 @@ import { Meal } from '../types';
 
 export const mealService = {
   async getMealsByDate(date: string): Promise<Meal[]> {
-    const { data } = await api.get(`/meals?date=${date}`);
+    const { data } = await api.get(`/meals?target_date=${date}`);
     return data;
   },
 

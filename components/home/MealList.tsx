@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { theme } from '../../constants/theme';
 import Swipeable from 'react-native-gesture-handler/Swipeable';

@@ -15,15 +15,19 @@ import { theme } from '../../constants/theme';
 import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
-  const { signOut } = useAuthStore();
+  const { signOut, isAuthenticated } = useAuthStore();
   const { streak } = useStreak();
   const { meals, removeMeal, fetchDailyData } = useDailyStore();
   const { profile } = useUserStore();
   const router = useRouter();
 
+  // Only fetch once we have a valid session — avoids 401 on first render
+  // when the token is still being restored from AsyncStorage
   useEffect(() => {
-    fetchDailyData();
-  }, []);
+    if (isAuthenticated) {
+      fetchDailyData();
+    }
+  }, [isAuthenticated]);
 
   const currentCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
   const goalCalories = profile?.calorie_goal || 2000;

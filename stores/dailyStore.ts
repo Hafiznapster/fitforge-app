@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Meal, WaterLog } from '../types';
 import { mealService } from '../services/mealService';
 import { waterService } from '../services/waterService';
+import { supabase } from '../services/supabase';
 import { format } from 'date-fns';
 
 interface DailyState {
@@ -33,6 +34,10 @@ export const useDailyStore = create<DailyState>()(
       },
 
       fetchDailyData: async () => {
+        // Guard: skip if there's no active session to avoid 401s
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
         set({ isLoading: true });
         const date = get().selectedDate;
         try {

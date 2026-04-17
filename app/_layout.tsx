@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Slot, useRouter, useSegments, ErrorBoundaryProps } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase } from '../services/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
@@ -24,11 +25,11 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
  */
 export default function RootLayout() {
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <Slot />
       <AuthGate />
       <Toast />
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
